@@ -2,11 +2,9 @@ package api
 
 import (
 	"encoding/json"
-	"flag"
+	//"flag"
 	"fmt"
 	"net/http"
-
-	"github.com/CCDirectLink/CCUpdaterCLI/cmd/internal/global"
 )
 
 //GlobalModsRequest for incoming list available mods requests
@@ -18,25 +16,26 @@ type GlobalModsRequest struct {
 type GlobalModsResponse struct {
 	Success bool                  `json:"success"`
 	Message string                `json:"message,omitempty"`
-	Mods    map[string]global.Mod `json:"mods"`
+	//Mods    map[string]global.Mod `json:"mods"`
 }
 
 //GetGlobalMods returns all available mods
 func GetGlobalMods(w http.ResponseWriter, r *http.Request) {
-	var decoder *json.Decoder
+	//var decoder *json.Decoder
 	if r.Method == "POST" {
-		decoder = json.NewDecoder(r.Body)
+		//decoder = json.NewDecoder(r.Body)
 	}
 
 	setHeaders(w)
 
-	mods, err := getGlobalMods(decoder)
+	//mods, err := getGlobalMods(decoder)
+	err := fmt.Errorf("NYI")
 
 	encoder := json.NewEncoder(w)
 	if err == nil {
 		encoder.Encode(&GlobalModsResponse{
 			Success: true,
-			Mods:    mods,
+			//Mods:    mods,
 		})
 	} else {
 		encoder.Encode(&GlobalModsResponse{
@@ -45,7 +44,7 @@ func GetGlobalMods(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 }
-
+/*
 func getGlobalMods(decoder *json.Decoder) (map[string]global.Mod, error) {
 	if decoder != nil {
 		var req GlobalModsRequest
@@ -67,3 +66,4 @@ func getGlobalMods(decoder *json.Decoder) (map[string]global.Mod, error) {
 
 	return res.Mods, nil
 }
+*/

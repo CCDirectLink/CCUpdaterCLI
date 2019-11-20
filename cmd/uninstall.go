@@ -2,30 +2,25 @@ package cmd
 
 import (
 	"fmt"
-	"os"
-
 	"github.com/CCDirectLink/CCUpdaterCLI/cmd/internal/local"
-	"github.com/CCDirectLink/CCUpdaterCLI/cmd/internal/tools"
 )
 
 //Uninstall removes a mod from a directory
 func Uninstall(args []string) (*Stats, error) {
-	if _, err := local.GetGame(); err != nil {
+	game, err := local.GetGame()
+	if err != nil {
 		return nil, fmt.Errorf("cmd: Could not find game folder")
 	}
-
+	
 	stats := &Stats{}
 	for _, name := range args {
-		mod, err := local.GetMod(name)
-		if err != nil {
-			err = uninstallTool(name, stats)
-			if err != nil {
-				return stats, err
-			}
-			continue
+		mod, modExists := game.Packages()[name]
+		if !modExists {
+			stats.AddWarning(fmt.Sprintf("cmd: Could not remove mod '%s' because it couldn't be found", name))
+			return stats, err
 		}
 
-		err = os.RemoveAll(mod.BasePath)
+		err = mod.Remove()
 		if err != nil {
 			stats.AddWarning(fmt.Sprintf("cmd: Could not remove mod '%s' because of an error in %s", name, err.Error()))
 		}
@@ -34,20 +29,4 @@ func Uninstall(args []string) (*Stats, error) {
 	}
 
 	return stats, nil
-}
-
-func uninstallTool(name string, stats *Stats) error {
-	tool := tools.Find(name)
-	if tool == nil {
-		stats.AddWarning(fmt.Sprintf("cmd: Could not find mod or tool '%s'", name))
-		return nil
-	}
-
-	err := tool.Uninstall()
-	if err != nil {
-		return err
-	}
-
-	stats.Removed++
-	return nil
 }

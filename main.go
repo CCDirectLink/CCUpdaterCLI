@@ -13,7 +13,10 @@ func main() {
 	flag.String("game", "", "if set it overrides the path of the game")
 
 	port := flag.Int("port", 9392, "the port which the api server listens on")
-	host := flag.String("host", "", "the host which the api server listens on")
+	host := flag.String("host", "localhost", "the host which the api server listens on")
+
+	flag.Bool("v", false, "makes certain commands report more verbose output")
+	flag.Bool("all", false, "for flag: indicates all kinds of packages should be shown")
 
 	flag.Parse()
 

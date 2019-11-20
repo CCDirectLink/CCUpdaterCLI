@@ -2,40 +2,39 @@ package cmd
 
 import (
 	"fmt"
-	"os"
 
-	"github.com/CCDirectLink/CCUpdaterCLI/cmd/internal/global"
 	"github.com/CCDirectLink/CCUpdaterCLI/cmd/internal/local"
+	"github.com/CCDirectLink/CCUpdaterCLI/public"
 )
 
 //Outdated displays old mods and their new version
 func Outdated() {
-	if _, err := local.GetGame(); err != nil {
+	game, err := local.GetGame()
+	if err != nil {
 		fmt.Printf("Could not find game folder. Make sure you executed the command inside the game folder.\n")
 		return
 	}
 
-	mods, err := local.GetMods()
+	remote, err := public.GetRemotePackages()
 	if err != nil {
-		fmt.Printf("Could not list mods because of an error in %s\n", err.Error())
-		os.Exit(1)
+		fmt.Printf("Could not download mod data because an error occured in %s.\n", err.Error())
+		return
 	}
 
 	outdated := false
-	for _, mod := range mods {
-		if out, _ := mod.Outdated(); out {
-			new, err := global.GetMod(mod.Name)
-			if err != nil {
-				fmt.Printf("An error occured in %s\n", err.Error())
-				continue
-			}
-
+	for modName, mod := range game.Packages() {
+		remoteMod, remoteHasMod := remote[modName]
+		thisModIsOutdated := false
+		if remoteHasMod {
+			thisModIsOutdated = remoteMod.Metadata().Version.Compare(mod.Metadata().Version) > 0
+		}
+		if thisModIsOutdated {
 			if !outdated {
 				outdated = true
 				fmt.Println("New     Current Name")
 			}
 
-			fmt.Printf("%s   %s   %s\n", new.Version, mod.Version, mod.Name)
+			fmt.Printf("%s   %s   %s\n", remoteMod.Metadata().Version, mod.Metadata().Version, modName)
 		}
 	}
 }

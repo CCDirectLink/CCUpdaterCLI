@@ -3,59 +3,55 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/CCDirectLink/CCUpdaterCLI/cmd/internal/global"
-	"github.com/CCDirectLink/CCUpdaterCLI/cmd/internal/install"
 	"github.com/CCDirectLink/CCUpdaterCLI/cmd/internal/local"
-	"github.com/CCDirectLink/CCUpdaterCLI/cmd/internal/tools"
+	"github.com/CCDirectLink/CCUpdaterCLI/public"
 )
 
 //Update a mod
 func Update(args []string) (*Stats, error) {
-	if _, err := local.GetGame(); err != nil {
+	game, err := local.GetGame()
+	if err != nil {
 		return nil, fmt.Errorf("cmd: Could not find game folder")
 	}
 
-	_, err := global.FetchModData()
+	remote, err := public.GetRemotePackages()
 	if err != nil {
 		return nil, fmt.Errorf("cmd: Could not download mod data because an error occured in %s", err.Error())
 	}
 
 	if len(args) == 0 {
-		return updateOutdated()
+		return updateOutdated(game, remote)
 	}
 
 	stats := &Stats{}
 	for _, name := range args {
-		if err := updateMod(name, stats); err != nil {
-			return stats, err
+		remoteMod, remoteModExists := remote[name]
+		if !remoteModExists {
+			stats.AddWarning(fmt.Sprintf("cmd: Couldn't update mod '%s' because no remote version exists.", name))
+		} else {
+			if err := installOrUpdateMod(game, remote, remoteMod, stats); err != nil {
+				return stats, err
+			}
 		}
 	}
 
 	return stats, nil
 }
 
-func updateOutdated() (*Stats, error) {
-	mods, err := local.GetMods()
-	if err != nil {
-		return nil, fmt.Errorf("cmd: Could not list installed mods because and error occured in %s", err.Error())
-	}
-
+func updateOutdated(game *public.GameInstance, remote map[string]public.RemotePackage) (*Stats, error) {
 	stats := &Stats{}
-	for _, mod := range mods {
-		if _, err := global.GetMod(mod.Name); err != nil {
+	for modName, mod := range game.Packages() {
+		remotePkg, hasRemote := remote[modName]
+		if !hasRemote {
 			continue
 		}
 
-		outdated, err := mod.Outdated()
-		if err != nil {
-			return stats, fmt.Errorf("cmd: Could not check if the mod was outdated because an error occured in %s", err.Error())
-		}
-
-		if !outdated {
+		// remoteVer.Compare(localVer) is > 0 for outdated mods.
+		if remotePkg.Metadata().Version.Compare(mod.Metadata().Version) <= 0 {
 			continue
 		}
 
-		if err := updateMod(mod.Name, stats); err != nil {
+		if err := installOrUpdateMod(game, remote, remotePkg, stats); err != nil {
 			return stats, err
 		}
 	}
@@ -63,43 +59,3 @@ func updateOutdated() (*Stats, error) {
 	return stats, nil
 }
 
-func updateMod(name string, stats *Stats) error {
-	if _, err := local.GetMod(name); err != nil {
-		return updateTool(name, stats)
-	}
-
-	if _, err := global.GetMod(name); err != nil {
-		stats.AddWarning(fmt.Sprintf("cmd: Could find '%s'", name))
-		return nil
-	}
-
-	if err := install.Install(name, true); err != nil {
-		return fmt.Errorf("cmd: Could not update '%s' because an error occured in %s", name, err.Error())
-	}
-
-	stats.Updated++
-
-	mod, err := local.GetMod(name)
-	if err != nil {
-		stats.AddWarning(fmt.Sprintf("cmd: Updated '%s' but it seems to be an invalid mod", name))
-		return nil
-	}
-
-	return installDependencies(mod, stats)
-}
-
-func updateTool(name string, stats *Stats) error {
-	tool := tools.Find(name)
-	if tool == nil {
-		stats.AddWarning(fmt.Sprintf("cmd: Could not update '%s' because it was not installed", name))
-		return nil
-	}
-
-	err := tool.Update()
-	if err != nil {
-		return err
-	}
-
-	stats.Updated++
-	return nil
-}

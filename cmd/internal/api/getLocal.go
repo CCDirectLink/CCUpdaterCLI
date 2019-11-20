@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	"github.com/CCDirectLink/CCUpdaterCLI/cmd/internal/local"
+	"github.com/CCDirectLink/CCUpdaterCLI/public"
 )
 
 //LocalModsRequest for incoming installed mod list requests
@@ -18,7 +19,7 @@ type LocalModsRequest struct {
 type LocalModsResponse struct {
 	Success bool        `json:"success"`
 	Message string      `json:"message,omitempty"`
-	Mods    []local.Mod `json:"mods"`
+	Mods    []public.PackageMetadata `json:"mods"`
 }
 
 //GetLocalMods returns all installed mods
@@ -46,7 +47,7 @@ func GetLocalMods(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func getLocalMods(decoder *json.Decoder) ([]local.Mod, error) {
+func getLocalMods(decoder *json.Decoder) ([]public.PackageMetadata, error) {
 	if decoder != nil {
 		var req LocalModsRequest
 		if err := decoder.Decode(&req); err != nil {
@@ -60,5 +61,16 @@ func getLocalMods(decoder *json.Decoder) ([]local.Mod, error) {
 		}
 	}
 
-	return local.GetMods()
+	game, err := local.GetGame()
+	if err != nil {
+		return nil, err
+	}
+
+	total := []public.PackageMetadata{}
+	
+	for _, v := range game.Packages() {
+		total = append(total, v.Metadata())
+	}
+	
+	return total, nil
 }

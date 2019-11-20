@@ -22,7 +22,6 @@ func StartAt(host string, port int) {
 	http.HandleFunc("/api/v1/update", api.Update)
 	http.HandleFunc("/api/v1/get/local", api.GetLocalMods)
 	http.HandleFunc("/api/v1/get/global", api.GetGlobalMods)
-	http.HandleFunc("/api/v1/get/outdated", api.Outdated)
 
 	http.ListenAndServe(url, nil)
 }
