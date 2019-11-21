@@ -2,12 +2,11 @@ package api
 
 import (
 	"encoding/json"
-	"flag"
 	"fmt"
 	"net/http"
 
-	"github.com/CCDirectLink/CCUpdaterCLI/cmd/internal/local"
-	"github.com/CCDirectLink/CCUpdaterCLI/public"
+	"github.com/CCDirectLink/CCUpdaterCLI/cmd/internal"
+	"github.com/CCDirectLink/CCUpdaterCLI"
 )
 
 //LocalModsRequest for incoming installed mod list requests
@@ -19,7 +18,7 @@ type LocalModsRequest struct {
 type LocalModsResponse struct {
 	Success bool        `json:"success"`
 	Message string      `json:"message,omitempty"`
-	Mods    []public.PackageMetadata `json:"mods"`
+	Mods    []ccmodupdater.PackageMetadata `json:"mods"`
 }
 
 //GetLocalMods returns all installed mods
@@ -47,28 +46,25 @@ func GetLocalMods(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func getLocalMods(decoder *json.Decoder) ([]public.PackageMetadata, error) {
+func getLocalMods(decoder *json.Decoder) ([]ccmodupdater.PackageMetadata, error) {
+	var game *string = nil
 	if decoder != nil {
 		var req LocalModsRequest
 		if err := decoder.Decode(&req); err != nil {
 			return nil, fmt.Errorf("cmd/internal/api: Could not parse request body: %s", err.Error())
 		}
 
-		if req.Game != nil {
-			if err := flag.Set("game", *req.Game); err != nil {
-				return nil, fmt.Errorf("cmd/internal/api: Could set game flag: %s", err.Error())
-			}
-		}
+		game = req.Game
 	}
 
-	game, err := local.GetGame()
+	context, err := internal.NewContext(game)
 	if err != nil {
 		return nil, err
 	}
 
-	total := []public.PackageMetadata{}
+	total := []ccmodupdater.PackageMetadata{}
 	
-	for _, v := range game.Packages() {
+	for _, v := range context.Game().Packages() {
 		total = append(total, v.Metadata())
 	}
 	

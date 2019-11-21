@@ -1,4 +1,4 @@
-package public
+package local
 
 import (
 	"fmt"
@@ -6,6 +6,7 @@ import (
 	"os"
 	"encoding/json"
 	"github.com/Masterminds/semver"
+	"github.com/CCDirectLink/CCUpdaterCLI"
 )
 
 // VerySecretVerion has to be exported for some reason, but is private.
@@ -19,10 +20,10 @@ type crossCodePackage struct {
 	version *semver.Version
 }
 
-func (cc crossCodePackage) Metadata() PackageMetadata {
-	return PackageMetadata{
+func (cc crossCodePackage) Metadata() ccmodupdater.PackageMetadata {
+	return ccmodupdater.PackageMetadata{
 		Name: "crosscode",
-		Type: PackageTypeBase,
+		Type: ccmodupdater.PackageTypeBase,
 		Description: "CrossCode is the base game itself.",
 		Version: cc.version,
 	}
@@ -34,12 +35,22 @@ func (cc crossCodePackage) Dependencies() map[string]string {
 	return map[string]string{}
 }
 
+type crossCodePackagePlugin struct {
+	pkg crossCodePackage
+}
+func (ccp crossCodePackagePlugin) Packages() []ccmodupdater.LocalPackage {
+	return []ccmodupdater.LocalPackage{
+		ccp.pkg,
+	}
+}
+
 // Attempts to get CrossCode as a package.
-func (gi *GameInstance) getCrossCodePackage() (LocalPackage, error) {
+func NewCrossCodePackagePlugin(game *ccmodupdater.GameInstance) (ccmodupdater.LocalPackagePlugin, error) {
 	// Firstly, find the changelog file. If it doesn't exist this isn't CrossCode.
-	changelog, err := os.Open(filepath.Join(gi.base, "./assets/data/changelog.json"))
+	changelogPath := filepath.Join(game.Base(), "./assets/data/changelog.json")
+	changelog, err := os.Open(changelogPath)
 	if err != nil {
-		return nil, fmt.Errorf("CrossCode not found")
+		return nil, fmt.Errorf("%s unopenable: %s", changelogPath, err.Error())
 	}
 	defer changelog.Close()
 	
@@ -58,7 +69,9 @@ func (gi *GameInstance) getCrossCodePackage() (LocalPackage, error) {
 		return nil, err
 	}
 	
-	return crossCodePackage{
-		version: version,
+	return crossCodePackagePlugin{
+		crossCodePackage{
+			version: version,
+		},
 	}, nil
 }

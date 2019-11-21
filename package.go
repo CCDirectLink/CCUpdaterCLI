@@ -1,4 +1,4 @@
-package public
+package ccmodupdater
 import "github.com/Masterminds/semver"
 
 // PackageType represents a specific kind of package.
@@ -7,15 +7,16 @@ type PackageType int
 // PackageTypeFirst is the first PackageType.
 const PackageTypeFirst PackageType = 0
 
-// PackageTypeBase represents a hidden base package that should not be visible from UI (but may be visible in CLI).
-const PackageTypeBase PackageType = 0
-// PackageTypeMod represents a mod.
-const PackageTypeMod PackageType = 1
-// PackageTypeTool represents a tool.
-const PackageTypeTool PackageType = 2
-
-// PackageTypeAfterLast is the last PackageType.
-const PackageTypeAfterLast PackageType = 3
+const (
+	// PackageTypeBase represents a hidden base package that should not be visible from UI (but may be visible in CLI).
+	PackageTypeBase PackageType = iota
+	// PackageTypeMod represents a mod.
+	PackageTypeMod
+	// PackageTypeTool represents a tool.
+	PackageTypeTool
+	// PackageTypeAfterLast is above the last PackageType, to allow iteration in for loops.
+	PackageTypeAfterLast
+)
 
 func (pt PackageType) String() string {
 	switch pt {
@@ -69,4 +70,9 @@ type LocalPackage interface {
 	Remove() error
 	// Acquires a dependency map (mapping package IDs to version constraints). DO BE ALERTED! This may be made part of PackageMetadata when the time comes!
 	Dependencies() map[string]string
+}
+
+// LocalPackagePlugin represents a plugin to the system that adds a scanner for local packages. It is assumed that the *GameInstance is supplied upon construction. The system is built this way because local packages are 
+type LocalPackagePlugin interface {
+	Packages() []LocalPackage
 }

@@ -1,34 +1,24 @@
-package cmd
+package commands
 
 import (
 	"fmt"
-	"github.com/CCDirectLink/CCUpdaterCLI/cmd/internal/local"
-	"github.com/CCDirectLink/CCUpdaterCLI/public"
 	"flag"
+
+	"github.com/CCDirectLink/CCUpdaterCLI/cmd/internal"
+	"github.com/CCDirectLink/CCUpdaterCLI"
 )
 
 //List prints a list of all available mods
-func List() {
+func List(context *internal.OnlineContext) {
 	verbose := flag.Lookup("v").Value.String() != "false"
 	all := flag.Lookup("all").Value.String() != "false"
 	
 	// Collect packages
-	
-	localPackages := map[string]public.LocalPackage{}
-	
-	game, err := local.GetGame()
-	if err == nil {
-		localPackages = game.Packages()
-	}
-
-	remotePackages, err := public.GetRemotePackages()
-	if err != nil {
-		fmt.Printf("cmd: Unable to continue, unable to get remote packages : %s\n", err.Error())
-		return
-	}
+	localPackages := context.Game().Packages()
+	remotePackages := context.RemotePackages()
 	
 	// Collate packages
-	packagesLatest := map[string]public.Package{}
+	packagesLatest := map[string]ccmodupdater.Package{}
 	for k, v := range localPackages {
 		packagesLatest[k] = v
 	}
@@ -49,13 +39,13 @@ func List() {
 	if all && verbose {
 		prefix = "\t"
 	}
-	for ptype := public.PackageTypeFirst; ptype < public.PackageTypeAfterLast; ptype++ {
+	for ptype := ccmodupdater.PackageTypeFirst; ptype < ccmodupdater.PackageTypeAfterLast; ptype++ {
 		if all {
 			if verbose {
 				fmt.Printf("%s\n", ptype.StringPlural())
 			}
 		} else {
-			if ptype != public.PackageTypeMod {
+			if ptype != ccmodupdater.PackageTypeMod {
 				continue
 			}
 		}
@@ -63,11 +53,11 @@ func List() {
 			latestMeta := v.Metadata()
 			local, localExists := localPackages[k]
 			remote, remoteExists := remotePackages[k]
-			localMeta := public.PackageMetadata{}
+			localMeta := ccmodupdater.PackageMetadata{}
 			if localExists {
 				localMeta = local.Metadata()
 			}
-			remoteMeta := public.PackageMetadata{}
+			remoteMeta := ccmodupdater.PackageMetadata{}
 			if remoteExists {
 				remoteMeta = remote.Metadata()
 			}

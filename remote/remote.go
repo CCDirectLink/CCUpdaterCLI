@@ -1,11 +1,10 @@
-package public
-
-// Moved from cmd/internal/global/ccmoddb.go
+package remote
 
 import (
 	"encoding/json"
 	"net/http"
 	"github.com/Masterminds/semver"
+	"github.com/CCDirectLink/CCUpdaterCLI"
 )
 
 const link = "https://raw.githubusercontent.com/CCDirectLink/CCModDB/master/mods.json"
@@ -54,13 +53,13 @@ func fetchModDataFromCCModDB() (*ccModDB, error) {
 }
 
 // GetRemotePackages retrieves all the remote packages that can be found right now.
-func GetRemotePackages() (map[string]RemotePackage, error) {
+func GetRemotePackages() (map[string]ccmodupdater.RemotePackage, error) {
 	ccmoddb, err := fetchModDataFromCCModDB()
 	if err != nil {
 		return nil, err
 	}
 	// Start with CCLoader already in there
-	packages := map[string]RemotePackage{
+	packages := map[string]ccmodupdater.RemotePackage{
 		"ccloader": ccLoaderRemotePackage{},
 	}
 	for _, mod := range ccmoddb.Mods {

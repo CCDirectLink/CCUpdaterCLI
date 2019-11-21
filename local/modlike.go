@@ -1,19 +1,21 @@
-package public
+package local
 
 import (
 	"encoding/json"
 	"os"
+	"io/ioutil"
 	"path/filepath"
 	"github.com/Masterminds/semver"
+	"github.com/CCDirectLink/CCUpdaterCLI"
 )
 
 type modPackage struct {
 	base string
-	loadedMetadata PackageMetadata
+	loadedMetadata ccmodupdater.PackageMetadata
 	dependencies map[string]string
 }
 
-func (mp modPackage) Metadata() PackageMetadata {
+func (mp modPackage) Metadata() ccmodupdater.PackageMetadata {
 	return mp.loadedMetadata
 }
 
@@ -30,7 +32,7 @@ func (mp modPackage) Remove() error {
 }
 
 // Ported from cmd/internal/local/modfinder.go
-func getModPackage(base string) (LocalPackage, error) {
+func getModPackage(base string) (ccmodupdater.LocalPackage, error) {
 	file, err := os.Open(filepath.Join(base, "package.json"))
 	if err != nil {
 		return nil, err
@@ -64,9 +66,9 @@ func getModPackage(base string) (LocalPackage, error) {
 		dependencies = *data.Dependencies
 	}
 
-	metadata := PackageMetadata{
+	metadata := ccmodupdater.PackageMetadata{
 		Name: data.Name,
-		Type: PackageTypeMod,
+		Type: ccmodupdater.PackageTypeMod,
 		Description: "An installed mod.",
 		Version: version,
 	}
@@ -74,7 +76,7 @@ func getModPackage(base string) (LocalPackage, error) {
 		metadata.Description = *data.Description
 	}
 	if metadata.Name == "Simplify" {
-		metadata.Type = PackageTypeBase
+		metadata.Type = ccmodupdater.PackageTypeBase
 		metadata.Description = "Assistant to CCLoader."
 	}
 	
@@ -83,4 +85,31 @@ func getModPackage(base string) (LocalPackage, error) {
 		loadedMetadata: metadata,
 		dependencies: dependencies,
 	}, nil
+}
+
+type modPackagePlugin struct {
+	dir string
+}
+
+// NewModlikePackagePlugin creates a LocalPackagePlugin to scan a given `assets/mods`-like (that or `assets/tools`)
+func NewModlikePackagePlugin(game *ccmodupdater.GameInstance, dir string) ccmodupdater.LocalPackagePlugin {
+	return modPackagePlugin{
+		dir: filepath.Join(game.Base(), dir),
+	}
+}
+
+func (mpp modPackagePlugin) Packages() []ccmodupdater.LocalPackage {
+	dirs, err := ioutil.ReadDir(mpp.dir)
+	packages := []ccmodupdater.LocalPackage{}
+	if err == nil {
+		for _, dir := range dirs {
+			if dir.IsDir() {
+				mod, err := getModPackage(filepath.Join(mpp.dir, dir.Name()))
+				if err == nil {
+					packages = append(packages, mod)
+				}
+			}
+		}
+	}
+	return packages
 }

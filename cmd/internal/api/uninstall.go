@@ -2,11 +2,11 @@ package api
 
 import (
 	"encoding/json"
-	"flag"
 	"fmt"
 	"net/http"
 
-	"github.com/CCDirectLink/CCUpdaterCLI/cmd"
+	"github.com/CCDirectLink/CCUpdaterCLI/cmd/commands"
+	"github.com/CCDirectLink/CCUpdaterCLI/cmd/internal"
 )
 
 //UninstallRequest for incoming uninstallation requests
@@ -19,7 +19,7 @@ type UninstallRequest struct {
 type UninstallResponse struct {
 	Success bool       `json:"success"`
 	Message string     `json:"message,omitempty"`
-	Stats   *cmd.Stats `json:"stats,omitempty"`
+	Stats   *internal.Stats `json:"stats,omitempty"`
 }
 
 //Uninstall a mod via api request
@@ -49,17 +49,16 @@ func Uninstall(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func uninstall(decoder *json.Decoder) (*cmd.Stats, error) {
+func uninstall(decoder *json.Decoder) (*internal.Stats, error) {
 	var req UninstallRequest
 	if err := decoder.Decode(&req); err != nil {
 		return nil, fmt.Errorf("cmd/internal/api: Could not parse request body: %s", err.Error())
 	}
 
-	if req.Game != nil {
-		if err := flag.Set("game", *req.Game); err != nil {
-			return nil, fmt.Errorf("cmd/internal/api: Could set game flag: %s", err.Error())
-		}
+	context, err := internal.NewContext(req.Game)
+	if err != nil {
+		return nil, fmt.Errorf("cmd/internal/api: Could not set game flag: %s", err.Error())
 	}
 
-	return cmd.Uninstall(req.Names)
+	return commands.Uninstall(context, req.Names)
 }

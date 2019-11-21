@@ -1,10 +1,11 @@
-package public
+package remote
 import (
 	"github.com/Masterminds/semver"
 	"fmt"
 	"path/filepath"
 	"io/ioutil"
 	"os"
+	"github.com/CCDirectLink/CCUpdaterCLI"
 )
 
 type modRemotePackage struct {
@@ -12,16 +13,16 @@ type modRemotePackage struct {
 	version *semver.Version
 }
 
-func (mrp modRemotePackage) Metadata() PackageMetadata {
-	return PackageMetadata{
+func (mrp modRemotePackage) Metadata() ccmodupdater.PackageMetadata {
+	return ccmodupdater.PackageMetadata{
 		Name: mrp.data.Name,
-		Type: PackageTypeMod,
+		Type: ccmodupdater.PackageTypeMod,
 		Description: mrp.data.Description,
 		Version: mrp.version,
 	}
 }
 
-func (mrp modRemotePackage) Install(game *GameInstance) error {
+func (mrp modRemotePackage) Install(game *ccmodupdater.GameInstance) error {
 	err := os.MkdirAll("installing", os.ModePerm)
 	if err != nil {
 		return err
@@ -47,7 +48,7 @@ func (mrp modRemotePackage) Install(game *GameInstance) error {
 	if !found {
 		return fmt.Errorf("cmd/internal: Could not find package metadata of mod '%s'", mrp.data.Name)
 	}
-
+	
 	modDir := filepath.Join(game.Base(), "assets/mods", mrp.data.Name)
 	err = copyDir(modDir, pkgDir)
 	if err != nil {

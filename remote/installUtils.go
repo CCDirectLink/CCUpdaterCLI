@@ -1,4 +1,4 @@
-package public
+package remote
 
 // Transferred from cmd/internal/install/*
 

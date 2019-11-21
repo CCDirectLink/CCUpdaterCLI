@@ -1,19 +1,20 @@
-package public
+package remote
 
 import (
 	"path/filepath"
 	"github.com/Masterminds/semver"
 	"fmt"
 	"os"
+	"github.com/CCDirectLink/CCUpdaterCLI"
 )
 
 type ccLoaderRemotePackage struct {
 }
 
-func (cc ccLoaderRemotePackage) Metadata() PackageMetadata {
-	return PackageMetadata{
+func (cc ccLoaderRemotePackage) Metadata() ccmodupdater.PackageMetadata {
+	return ccmodupdater.PackageMetadata{
 		Name: "ccloader",
-		Type: PackageTypeBase,
+		Type: ccmodupdater.PackageTypeBase,
 		Description: "CCLoader is a mod loader.",
 		// Please see ccLoaderPackage (note this is higher than that)
 		Version: semver.MustParse("1.0.1"),
@@ -22,7 +23,7 @@ func (cc ccLoaderRemotePackage) Metadata() PackageMetadata {
 func (cc ccLoaderRemotePackage) Dependencies() map[string]string {
 	return map[string]string{}
 }
-func (cc ccLoaderRemotePackage) Install(game *GameInstance) error {
+func (cc ccLoaderRemotePackage) Install(game *ccmodupdater.GameInstance) error {
 	err := os.MkdirAll("installing", os.ModePerm)
 	if err != nil {
 		return err

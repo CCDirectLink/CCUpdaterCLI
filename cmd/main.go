@@ -5,9 +5,27 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/CCDirectLink/CCUpdaterCLI/cmd"
 	"github.com/CCDirectLink/CCUpdaterCLI/cmd/api"
+	"github.com/CCDirectLink/CCUpdaterCLI/cmd/internal"
+	"github.com/CCDirectLink/CCUpdaterCLI/cmd/commands"
 )
+
+func assertContext() *internal.Context {
+	context, err := internal.NewContext(nil)
+	if err != nil {
+		fmt.Printf("UNABLE TO FIND GAME in %s\n", err.Error())
+		os.Exit(1)
+	}
+	return context
+}
+func assertOnlineContext() *internal.OnlineContext {
+	onlineContext, err := assertContext().Upgrade()
+	if err != nil {
+		fmt.Printf("UNABLE TO GO ONLINE in %s\n", err.Error())
+		os.Exit(1)
+	}
+	return onlineContext
+}
 
 func main() {
 	flag.String("game", "", "if set it overrides the path of the game")
@@ -31,17 +49,17 @@ func main() {
 	switch op {
 	case "install",
 		"i":
-		printStatsAndError(cmd.Install(args))
+		printStatsAndError(commands.Install(assertOnlineContext(), args))
 	case "remove",
 		"delete",
 		"uninstall":
-		printStatsAndError(cmd.Uninstall(args))
+		printStatsAndError(commands.Uninstall(assertContext(), args))
 	case "update":
-		printStatsAndError(cmd.Update(args))
+		printStatsAndError(commands.Update(assertOnlineContext(), args))
 	case "list":
-		cmd.List()
+		commands.List(assertOnlineContext())
 	case "outdated":
-		cmd.Outdated()
+		commands.Outdated(assertOnlineContext())
 	case "api":
 		api.StartAt(*host, *port)
 	case "version":
@@ -55,7 +73,7 @@ func main() {
 	}
 }
 
-func printStatsAndError(stats *cmd.Stats, err error) {
+func printStatsAndError(stats *internal.Stats, err error) {
 	if stats != nil && stats.Warnings != nil {
 		for _, warning := range stats.Warnings {
 			fmt.Printf("Warning in %s\n", warning)
