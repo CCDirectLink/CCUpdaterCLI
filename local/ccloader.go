@@ -33,13 +33,13 @@ type ccloaderPackagePlugin struct {
 
 // NewCCLoaderPackagePlugin creates a LocalPackagePlugin given the game base.
 func NewCCLoaderPackagePlugin(game *ccmodupdater.GameInstance) ccmodupdater.LocalPackagePlugin {
-	return modPackagePlugin{
+	return ccloaderPackagePlugin{
 		dir: game.Base(),
 	}
 }
 
 func (ccl ccloaderPackagePlugin) Packages() []ccmodupdater.LocalPackage {
-	proof, err := os.Open(filepath.Join(ccl.dir, "./ccloader/index.html"))
+	proof, err := os.Open(filepath.Join(ccl.dir, "ccloader/index.html"))
 	if err != nil {
 		return []ccmodupdater.LocalPackage{}
 	}

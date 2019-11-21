@@ -15,6 +15,6 @@ func AllLocalPackagePlugins(game *ccmodupdater.GameInstance) ([]ccmodupdater.Loc
 	return []ccmodupdater.LocalPackagePlugin{
 		NewCCLoaderPackagePlugin(game),
 		ccp,
-		NewModlikePackagePlugin(game, "assets/game"),
+		NewModlikePackagePlugin(game, "assets/mods"),
 	}, nil
 }

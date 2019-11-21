@@ -1,5 +1,7 @@
 package ccmodupdater
-import "github.com/Masterminds/semver"
+import (
+	"github.com/Masterminds/semver"
+)
 
 // PackageType represents a specific kind of package.
 type PackageType int
@@ -38,16 +40,16 @@ func (pt PackageType) StringPlural() string {
 	return pt.String() + "s"
 }
 
-// PackageMetadata contains the metadata of a package.
+// PackageMetadata contains the metadata of a package. (JSON-serializable for the HTTP API.)
 type PackageMetadata struct {
 	// The name of this package; identifies it hopefully uniquely. Must be the same as the key in various maps.
-	Name string
+	Name string  `json:"name"`
 	// The type of this package, 
-	Type PackageType
+	Type PackageType `json:"type"`
 	// The description of this package, human-readable.
-	Description string
+	Description string  `json:"description"`
 	// The version of this package, in SemVer format.
-	Version *semver.Version
+	Version *semver.Version  `json:"version"`
 }
 
 // Package represents a package, local or remote.
