@@ -22,6 +22,14 @@ func Uninstall(context *internal.Context, args []string) (*internal.Stats, error
 
 		stats.Removed++
 	}
+	for _, pkg := range context.Game().Packages() {
+		for _, name := range args {
+			_, hasDep := pkg.Metadata().Dependencies()[name]
+			if hasDep {
+				stats.AddWarning(fmt.Sprintf("cmd: '%s' was left without it's dependency '%s'", pkg.Metadata().Name(), name))
+			}
+		}
+	}
 
 	return stats, nil
 }

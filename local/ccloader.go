@@ -4,27 +4,36 @@ import (
 	"fmt"
 	"path/filepath"
 	"os"
-	"github.com/Masterminds/semver"
+	"io/ioutil"
 	"github.com/CCDirectLink/CCUpdaterCLI"
 )
 
 type ccLoaderPackage struct {
+	dir string
 }
 
 func (cc ccLoaderPackage) Metadata() ccmodupdater.PackageMetadata {
-	return ccmodupdater.PackageMetadata{
-		Name: "ccloader",
-		Type: ccmodupdater.PackageTypeBase,
-		Description: "CCLoader is a mod loader.",
-		// Please see ccLoaderRemotePackage
-		Version: semver.MustParse("1.0.0"),
-	}
+	metadata := ccmodupdater.PackageMetadata{}
+	metadata["name"] = "ccloader"
+	metadata["ccmodHumanName"] = "CCLoader"
+	metadata["description"] = "CCLoader is a mod loader."
+	// Please see ccLoaderRemotePackage
+	metadata["version"] = "1.0.0"
+	return metadata
 }
 func (cc ccLoaderPackage) Remove() error {
-	return fmt.Errorf("CCLoader cannot be automatically removed right now")
-}
-func (cc ccLoaderPackage) Dependencies() map[string]string {
-	return map[string]string{}
+	if err := ioutil.WriteFile(filepath.Join(cc.dir, "package.json"), []byte("{\"name\": \"CrossCode\", \"version\" : \"1.2.3\", \"main\": \"assets/node-webkit.html\", \"chromium-args\" : \"--ignore-gpu-blacklist\", \"window\" : { \"toolbar\" : false, \"icon\" : \"favicon.png\", \"width\" : 1136, \"height\": 640, \"fullscreen\" : false }}"), os.ModePerm); err != nil {
+		return fmt.Errorf("Couldn't replace package.json (Installation may be broken now!!!):", err.Error())
+	}
+	if err := os.RemoveAll(filepath.Join(cc.dir, "ccloader")); err != nil {
+		return fmt.Errorf("Couldn't remove CCLoader: %s", err.Error())
+	}
+	// If someone messed with Simplify, this might not work, so put it after the CCLoader removal.
+	// This'll ensure the goal is achieved even if the details are broken.
+	if err := os.RemoveAll(filepath.Join(cc.dir, "assets/mods/simplify")); err != nil {
+		return fmt.Errorf("Couldn't remove Simplify: %s", err.Error())
+	}
+	return nil
 }
 
 type ccloaderPackagePlugin struct {
@@ -45,6 +54,6 @@ func (ccl ccloaderPackagePlugin) Packages() []ccmodupdater.LocalPackage {
 	}
 	proof.Close()
 	return []ccmodupdater.LocalPackage{
-		ccLoaderPackage{},
+		ccLoaderPackage{ccl.dir},
 	}
 }

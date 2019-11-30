@@ -9,8 +9,7 @@ import (
 	"github.com/CCDirectLink/CCUpdaterCLI"
 )
 
-// VerySecretVerion has to be exported for some reason, but is private.
-type VerySecretVerion struct {
+type crossCodeChangeLog struct {
 	Changelog []struct {
 		Version string `json:"version"`
 	} `json:"changelog"`
@@ -21,18 +20,15 @@ type crossCodePackage struct {
 }
 
 func (cc crossCodePackage) Metadata() ccmodupdater.PackageMetadata {
-	return ccmodupdater.PackageMetadata{
-		Name: "crosscode",
-		Type: ccmodupdater.PackageTypeBase,
-		Description: "CrossCode is the base game itself.",
-		Version: cc.version,
-	}
+	metadata := ccmodupdater.PackageMetadata{}
+	metadata["name"] = "crosscode"
+	metadata["ccmodHumanName"] = "CrossCode"
+	metadata["description"] = "CrossCode is the base game itself."
+	metadata["version"] = cc.version.Original()
+	return metadata
 }
 func (cc crossCodePackage) Remove() error {
 	return fmt.Errorf("CrossCode cannot be removed")
-}
-func (cc crossCodePackage) Dependencies() map[string]string {
-	return map[string]string{}
 }
 
 type crossCodePackagePlugin struct {
@@ -54,7 +50,7 @@ func NewCrossCodePackagePlugin(game *ccmodupdater.GameInstance) (ccmodupdater.Lo
 	}
 	defer changelog.Close()
 	
-	var log *VerySecretVerion = &VerySecretVerion{}
+	var log *crossCodeChangeLog = &crossCodeChangeLog{}
 	
 	if err = json.NewDecoder(changelog).Decode(log) ; err != nil {
 		return nil, err

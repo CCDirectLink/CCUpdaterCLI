@@ -14,7 +14,7 @@ func Outdated(context *internal.OnlineContext) {
 		remoteMod, remoteHasMod := remote[modName]
 		thisModIsOutdated := false
 		if remoteHasMod {
-			thisModIsOutdated = remoteMod.Metadata().Version.Compare(mod.Metadata().Version) > 0
+			thisModIsOutdated = remoteMod.Metadata().Version().Compare(mod.Metadata().Version()) > 0
 		}
 		if thisModIsOutdated {
 			if !outdated {
@@ -22,7 +22,7 @@ func Outdated(context *internal.OnlineContext) {
 				fmt.Println("New     Current Name")
 			}
 
-			fmt.Printf("%s   %s   %s\n", remoteMod.Metadata().Version, mod.Metadata().Version, modName)
+			fmt.Printf("%s   %s   %s\n", remoteMod.Metadata().Version(), mod.Metadata().Version(), modName)
 		}
 	}
 }

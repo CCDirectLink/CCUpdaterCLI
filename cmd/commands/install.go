@@ -50,7 +50,10 @@ func Install(context *internal.OnlineContext, args []string) (*internal.Stats, e
 }
 
 func installOrUpdateMod(context *internal.OnlineContext, mod ccmodupdater.RemotePackage, stats *internal.Stats) error {
-	modName := mod.Metadata().Name
+	modName := mod.Metadata().Name()
+	if err := installDependencies(context, mod, stats); err != nil {
+		return fmt.Errorf("cmd: Could not install '%s' dependencies: %s", modName, err.Error())
+	}
 
 	localMod, hasMod := context.Game().Packages()[modName]
 	if hasMod {
@@ -70,5 +73,5 @@ func installOrUpdateMod(context *internal.OnlineContext, mod ccmodupdater.Remote
 	}
 
 	stats.Installed++
-	return installDependencies(context, localMod, stats)
+	return nil
 }

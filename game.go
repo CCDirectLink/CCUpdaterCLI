@@ -27,7 +27,7 @@ func (gi *GameInstance) Packages() map[string]LocalPackage {
 	packages := map[string]LocalPackage{}
 	for _, v := range gi.LocalPlugins {
 		for _, pkg := range v.Packages() {
-			packages[pkg.Metadata().Name] = pkg
+			packages[pkg.Metadata().Name()] = pkg
 		}
 	}
 	return packages

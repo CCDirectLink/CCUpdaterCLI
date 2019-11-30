@@ -1,43 +1,48 @@
 package remote
 
 import (
+	"runtime"
 	"encoding/json"
 	"net/http"
-	"github.com/Masterminds/semver"
 	"github.com/CCDirectLink/CCUpdaterCLI"
 )
 
-const link = "https://raw.githubusercontent.com/CCDirectLink/CCModDB/master/mods.json"
+const link = "https://raw.githubusercontent.com/20kdc/CCModDB/master/npDatabase.json"
 
 // ccModDB contains data about mods
-type ccModDB struct {
-	Mods map[string]ccModDBMod `json:"mods"`
+type ccModDB map[string]ccModDBMod
+
+type ccModDBHash struct {
+	SHA256 string `json:"sha256"`
 }
 
-// ccModDBMod defines the CCModDb mod structure
-type ccModDBMod struct {
-	Name        string  `json:"name"`
-	Description string  `json:"description"`
-	License     *string `json:"license"`
-	Page        []struct {
-		Name string `json:"name"`
-		URL  string `json:"url"`
+// Returns runtime.GOOS, substituting known differences into Node.js platform values.
+func whatPlatformAreWe() string {
+	sysPlatform := runtime.GOOS
+	if sysPlatform == "windows" {
+		return "win32"
 	}
-	ArchiveLink string `json:"archive_link"`
-	Hash        struct {
-		Sha256 string `json:"sha256"`
-	} `json:"hash"`
-	Version string `json:"version"`
-	// Not sure how this is supposed to be used. - 20kdc
-	Dir     *struct {
-		Any string `json:"any"`
-	} `json:"dir"`
+	return sysPlatform
 }
 
-var ccModDBData *ccModDB
+type ccModDBInstallationMethod struct {
+	Type string `json:"type"`
+	Platform *string `json:"platform"`
+
+	URL string `json:"url"`
+	Hash ccModDBHash `json:"hash"`
+	Source *string `json:"source"`
+}
+// ccModDBMod defines the CCModDb;NP mod structure
+type ccModDBMod struct {
+	Metadata ccmodupdater.PackageMetadata `json:"metadata"`
+	Installation []ccModDBInstallationMethod `json:"installation"`
+}
+
+var ccModDBData ccModDB
 
 // fetchModDataFromCCModDB
-func fetchModDataFromCCModDB() (*ccModDB, error) {
+func fetchModDataFromCCModDB() (ccModDB, error) {
 	if ccModDBData != nil {
 		return ccModDBData, nil
 	}
@@ -47,8 +52,8 @@ func fetchModDataFromCCModDB() (*ccModDB, error) {
 		return nil, err
 	}
 
-	ccModDBData = &ccModDB{}
-	err = json.NewDecoder(res.Body).Decode(ccModDBData)
+	ccModDBData = make(ccModDB)
+	err = json.NewDecoder(res.Body).Decode(&ccModDBData)
 	return ccModDBData, err
 }
 
@@ -62,16 +67,13 @@ func GetRemotePackages() (map[string]ccmodupdater.RemotePackage, error) {
 	packages := map[string]ccmodupdater.RemotePackage{
 		"ccloader": ccLoaderRemotePackage{},
 	}
-	for _, mod := range ccmoddb.Mods {
-		version, err := semver.NewVersion(mod.Version)
-		if err != nil {
+	for _, mod := range ccmoddb {
+		if err := mod.Metadata.Verify(); err != nil {
+			// Uhoh... Should we warning here????
 			continue
 		}
-		pkg := modRemotePackage{
-			data: mod,
-			version: version,
-		}
-		packages[pkg.Metadata().Name] = pkg
+		pkg := modRemotePackage{data: mod}
+		packages[pkg.Metadata().Name()] = pkg
 	}
 	return packages, nil
 }

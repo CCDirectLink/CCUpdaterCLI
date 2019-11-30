@@ -38,7 +38,7 @@ func updateOutdated(context *internal.OnlineContext) (*internal.Stats, error) {
 		}
 
 		// remoteVer.Compare(localVer) is > 0 for outdated mods.
-		if remotePkg.Metadata().Version.Compare(mod.Metadata().Version) <= 0 {
+		if remotePkg.Metadata().Version().Compare(mod.Metadata().Version()) <= 0 {
 			continue
 		}
 
