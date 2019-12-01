@@ -54,6 +54,7 @@ func (pm PackageMetadata) Verify() error {
 	}
 	version := pm["version"]
 	switch ver := version.(type) {
+		case nil:
 		case string:
 			_, err := semver.NewVersion(ver)
 			if err != nil {
@@ -74,6 +75,9 @@ func (pm PackageMetadata) Verify() error {
 			return fmt.Errorf("'ccmodType' invalid: not string")
 	}
 	dependencies := pm["ccmodDependencies"]
+	if dependencies == nil {
+		dependencies = pm["dependencies"]
+	}
 	switch depMap := dependencies.(type) {
 		case nil:
 			// Not present, not a problem
@@ -130,6 +134,10 @@ func (pm PackageMetadata) Type() PackageType {
 
 // Version gets the version of the package.
 func (pm PackageMetadata) Version() *semver.Version {
+	ver := pm["version"]
+	if ver == nil {
+		return semver.MustParse("0.0.0");
+	}
 	return semver.MustParse(pm["version"].(string))
 }
 
@@ -138,7 +146,10 @@ func (pm PackageMetadata) Dependencies() map[string]*semver.Constraints {
 	deps := make(map[string]*semver.Constraints)
 	depsBaseUnk := pm["ccmodDependencies"]
 	if depsBaseUnk == nil {
-		return deps
+		depsBaseUnk := pm["dependencies"]
+		if depsBaseUnk == nil {
+			return deps
+		}
 	}
 	depsBase := depsBaseUnk.(map[string]interface{})
 	for k, v := range depsBase {
@@ -153,7 +164,11 @@ func (pm PackageMetadata) Dependencies() map[string]*semver.Constraints {
 
 // Description gets the description of the package.
 func (pm PackageMetadata) Description() string {
-	return pm["description"].(string)
+	description := pm["description"]
+	if description == nil {
+		return ""
+	}
+	return description.(string)
 }
 
 
