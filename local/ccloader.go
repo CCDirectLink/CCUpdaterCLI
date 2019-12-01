@@ -6,20 +6,16 @@ import (
 	"os"
 	"io/ioutil"
 	"github.com/CCDirectLink/CCUpdaterCLI"
+	"encoding/json"
 )
 
 type ccLoaderPackage struct {
 	dir string
+	metadata ccmodupdater.PackageMetadata
 }
 
 func (cc ccLoaderPackage) Metadata() ccmodupdater.PackageMetadata {
-	metadata := ccmodupdater.PackageMetadata{}
-	metadata["name"] = "ccloader"
-	metadata["ccmodHumanName"] = "CCLoader"
-	metadata["description"] = "CCLoader is a mod loader."
-	// Please see ccLoaderRemotePackage
-	metadata["version"] = "1.0.0"
-	return metadata
+	return cc.metadata
 }
 func (cc ccLoaderPackage) Remove() error {
 	if err := ioutil.WriteFile(filepath.Join(cc.dir, "package.json"), []byte("{\"name\": \"CrossCode\", \"version\" : \"1.2.3\", \"main\": \"assets/node-webkit.html\", \"chromium-args\" : \"--ignore-gpu-blacklist\", \"window\" : { \"toolbar\" : false, \"icon\" : \"favicon.png\", \"width\" : 1136, \"height\": 640, \"fullscreen\" : false }}"), os.ModePerm); err != nil {
@@ -48,12 +44,22 @@ func NewCCLoaderPackagePlugin(game *ccmodupdater.GameInstance) ccmodupdater.Loca
 }
 
 func (ccl ccloaderPackagePlugin) Packages() []ccmodupdater.LocalPackage {
-	proof, err := os.Open(filepath.Join(ccl.dir, "ccloader/index.html"))
+	proof, err := os.Open(filepath.Join(ccl.dir, "ccloader/package.json"))
 	if err != nil {
 		return []ccmodupdater.LocalPackage{}
 	}
-	proof.Close()
+	defer proof.Close()
+
+	metadata := make(ccmodupdater.PackageMetadata)
+	err = json.NewDecoder(proof).Decode(&metadata)
+	if err != nil {
+		return []ccmodupdater.LocalPackage{}
+	}
+	
+	if err = metadata.Verify(); err != nil {
+		return []ccmodupdater.LocalPackage{}
+	}
 	return []ccmodupdater.LocalPackage{
-		ccLoaderPackage{ccl.dir},
+		ccLoaderPackage{ccl.dir, metadata},
 	}
 }

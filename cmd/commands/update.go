@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/CCDirectLink/CCUpdaterCLI/cmd/internal"
+	"github.com/CCDirectLink/CCUpdaterCLI/local"
 )
 
 //Update a mod
@@ -45,6 +46,10 @@ func updateOutdated(context *internal.OnlineContext) (*internal.Stats, error) {
 		if err := installOrUpdateMod(context, remotePkg, stats); err != nil {
 			return stats, err
 		}
+	}
+
+	for _, warning := range local.CheckLocal(context.Game(), context.RemotePackages()) {
+		stats.AddWarning(warning)
 	}
 
 	return stats, nil

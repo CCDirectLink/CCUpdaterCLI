@@ -5,7 +5,7 @@ import (
 
 	"github.com/CCDirectLink/CCUpdaterCLI/cmd/internal"
 	"github.com/CCDirectLink/CCUpdaterCLI"
-	"github.com/CCDirectLink/CCUpdaterCLI/remote"
+	"github.com/CCDirectLink/CCUpdaterCLI/local"
 )
 
 var installed = 0
@@ -14,11 +14,6 @@ var installed = 0
 func Install(context *internal.OnlineContext, args []string) (*internal.Stats, error) {
 	if len(args) == 0 {
 		return nil, fmt.Errorf("cmd: No mods installed since no mods were specified")
-	}
-
-	remote, err := remote.GetRemotePackages()
-	if err != nil {
-		return nil, fmt.Errorf("cmd: Could not download mod data because an error occured in %s", err.Error())
 	}
 
 	stats := &internal.Stats{}
@@ -30,9 +25,9 @@ func Install(context *internal.OnlineContext, args []string) (*internal.Stats, e
 			continue
 		}
 
-		mod, hadMod := remote[name]
+		mod, hadMod := context.RemotePackages()[name]
 		if !hadMod {
-			return stats, fmt.Errorf("cmd: Could not find '%s' available for download: %s", name, err.Error())
+			return stats, fmt.Errorf("cmd: Could not find '%s' available for download", name)
 		}
 
 
@@ -41,9 +36,8 @@ func Install(context *internal.OnlineContext, args []string) (*internal.Stats, e
 		}
 	}
 
-	_, hasCCLoader := context.Game().Packages()["ccloader"]
-	if !hasCCLoader {
-		stats.AddWarning("cmd: CCLoader wasn't installed (`ccmu install ccloader`); if mods are being installed, this may be required.")
+	for _, warning := range local.CheckLocal(context.Game(), context.RemotePackages()) {
+		stats.AddWarning(warning)
 	}
 	
 	return stats, nil

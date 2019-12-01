@@ -22,6 +22,7 @@ type crossCodePackage struct {
 func (cc crossCodePackage) Metadata() ccmodupdater.PackageMetadata {
 	metadata := ccmodupdater.PackageMetadata{}
 	metadata["name"] = "crosscode"
+	metadata["ccmodType"] = "base"
 	metadata["ccmodHumanName"] = "CrossCode"
 	metadata["description"] = "CrossCode is the base game itself."
 	metadata["version"] = cc.version.Original()

@@ -38,9 +38,11 @@ func copyDir(dst, src string) error {
 		return err
 	}
 
-	err = os.MkdirAll(dst, srcStat.Mode())
-	if err != nil {
-		return err
+	if dst != "" {
+		err = os.MkdirAll(dst, srcStat.Mode())
+		if err != nil {
+			return fmt.Errorf("Unable to make directory '%s': %s", dst, err.Error())
+		}
 	}
 
 	files, err := ioutil.ReadDir(src)

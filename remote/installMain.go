@@ -19,19 +19,19 @@ func tryExecuteInstallationMethod(method ccModDBInstallationMethod, newDir strin
 	
 	err := os.MkdirAll("installing", os.ModePerm)
 	if err != nil {
-		return err
+		return fmt.Errorf("Unable to make temp directory: %s", err.Error())
 	}
 	defer os.RemoveAll("installing")
 
 	file, err := download(method.URL)
 	if err != nil {
-		return err
+		return fmt.Errorf("Unable to download: %s", err.Error())
 	}
 	defer os.Remove(file.Name())
 
 	dir, err := extract(file)
 	if err != nil {
-		return err
+		return fmt.Errorf("Unable to extract: %s", err.Error())
 	}
 	defer os.RemoveAll(dir)
 	

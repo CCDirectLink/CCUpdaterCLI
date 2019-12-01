@@ -64,9 +64,7 @@ func GetRemotePackages() (map[string]ccmodupdater.RemotePackage, error) {
 		return nil, err
 	}
 	// Start with CCLoader already in there
-	packages := map[string]ccmodupdater.RemotePackage{
-		"ccloader": ccLoaderRemotePackage{},
-	}
+	packages := map[string]ccmodupdater.RemotePackage{}
 	for _, mod := range ccmoddb {
 		if err := mod.Metadata.Verify(); err != nil {
 			// Uhoh... Should we warning here????

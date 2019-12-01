@@ -97,6 +97,13 @@ func (pm PackageMetadata) Verify() error {
 			return fmt.Errorf("'ccmodDependencies' is invalid: not object")
 	}
 	// Un-functional stuff
+	humanName := pm["ccmodHumanName"]
+	switch humanName.(type) {
+		case nil:
+		case string:
+		default:
+			return fmt.Errorf("'ccmodHumanName' not string")
+	}
 	de := pm["description"]
 	switch de.(type) {
 		case nil:
@@ -111,6 +118,15 @@ func (pm PackageMetadata) Verify() error {
 // Name gets the name of the package.
 func (pm PackageMetadata) Name() string {
 	return pm["name"].(string)
+}
+
+// HumanName gets the 'human name' of the package.
+func (pm PackageMetadata) HumanName() string {
+	name := pm["ccmodHumanName"]
+	if name == nil {
+		return pm.Name()
+	}
+	return name.(string)
 }
 
 // Type gets the type of the package.
@@ -136,7 +152,7 @@ func (pm PackageMetadata) Type() PackageType {
 func (pm PackageMetadata) Version() *semver.Version {
 	ver := pm["version"]
 	if ver == nil {
-		return semver.MustParse("0.0.0");
+		return semver.MustParse("0.0.0")
 	}
 	return semver.MustParse(pm["version"].(string))
 }
