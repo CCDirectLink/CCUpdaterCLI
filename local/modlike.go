@@ -42,7 +42,7 @@ func getModPackage(base string) (ccmodupdater.LocalPackage, error) {
 
 	// Still have to mess with the metadata just a tad.
 	if metadata.Name() == "Simplify" {
-		metadata["type"] = "base"
+		metadata["ccmodType"] = "base"
 		metadata["description"] = "Assistant to CCLoader."
 	}
 	
