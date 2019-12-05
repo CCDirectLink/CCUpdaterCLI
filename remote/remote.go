@@ -5,7 +5,10 @@ import (
 	"encoding/json"
 	"net/http"
 	"github.com/CCDirectLink/CCUpdaterCLI"
+	"sync"
 )
+
+var getOnce sync.Once
 
 const link = "https://raw.githubusercontent.com/20kdc/CCModDB/master/npDatabase.json"
 
@@ -40,21 +43,29 @@ type ccModDBMod struct {
 }
 
 var ccModDBData ccModDB
+var ccModDBErr error
 
-// fetchModDataFromCCModDB
 func fetchModDataFromCCModDB() (ccModDB, error) {
-	if ccModDBData != nil {
-		return ccModDBData, nil
-	}
+	// Thread-safe cache
+	getOnce.Do(func () {
+		res, err := http.Get(link)
+		if err != nil {
+			ccModDBData = nil
+			ccModDBErr = err
+			return
+		}
 
-	res, err := http.Get(link)
-	if err != nil {
-		return nil, err
-	}
-
-	ccModDBData = make(ccModDB)
-	err = json.NewDecoder(res.Body).Decode(&ccModDBData)
-	return ccModDBData, err
+		data := make(ccModDB)
+		err = json.NewDecoder(res.Body).Decode(&data)
+		if err != nil {
+			ccModDBData = nil
+			ccModDBErr = err
+			return
+		}
+		ccModDBData = data
+		ccModDBErr = nil
+	})
+	return ccModDBData, ccModDBErr
 }
 
 // GetRemotePackages retrieves all the remote packages that can be found right now.

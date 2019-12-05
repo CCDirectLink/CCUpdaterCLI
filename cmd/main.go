@@ -34,7 +34,8 @@ func main() {
 	host := flag.String("host", "localhost", "the host which the api server listens on")
 
 	flag.Bool("v", false, "makes certain commands report more verbose output")
-	flag.Bool("all", false, "for flag: indicates all kinds of packages should be shown")
+	flag.Bool("all", false, "for list: indicates all kinds of packages should be shown")
+	flag.Bool("force", false, "for commands that perform actions: ignores automatic dependency handling")
 
 	flag.Parse()
 

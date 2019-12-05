@@ -13,8 +13,10 @@ import (
 //Context contains the context details for this command.
 type Context struct {
 	game *ccmodupdater.GameInstance
+	upgraded *OnlineContext
 }
 
+//NewContext creates a new local context.
 func NewContext(dir *string) (*Context, error) {
 	if dir == nil {
 		game := flag.Lookup("game")
@@ -38,8 +40,11 @@ func NewContext(dir *string) (*Context, error) {
 	game.LocalPlugins = plugins
 	return &Context{
 		game,
+		nil,
 	}, nil
 }
+
+//NewOnlineContext creates a new online context.
 func NewOnlineContext(dir *string) (*OnlineContext, error) {
 	ctx, err := NewContext(dir)
 	if err != nil {
@@ -58,6 +63,9 @@ func (ctx *Context) Game() *ccmodupdater.GameInstance {
 
 //Upgrade upgrades the Context to an OnlineContext.
 func (ctx *Context) Upgrade() (*OnlineContext, error) {
+	if ctx.upgraded != nil {
+		return ctx.upgraded, nil
+	}
 	packages, err := remote.GetRemotePackages()
 	if err != nil {
 		return nil, err
@@ -66,7 +74,65 @@ func (ctx *Context) Upgrade() (*OnlineContext, error) {
 		Context: *ctx,
 		remote: packages,
 	}
+	ctx.upgraded = rwc
+	rwc.upgraded = rwc
 	return rwc, nil
+}
+
+// Execute executes a package transaction.
+func (ctx *Context) Execute(tx ccmodupdater.PackageTX, stats *Stats) error {
+	upgraded := ctx.upgraded
+	var tc ccmodupdater.PackageTXContext
+	if upgraded != nil {
+		tc = ccmodupdater.PackageTXContext{
+			LocalPackages: ctx.game.Packages(),
+			RemotePackages: upgraded.remote,
+		}
+	} else {
+		tc = ccmodupdater.PackageTXContext{
+			LocalPackages: ctx.game.Packages(),
+			RemotePackages: make(map[string]ccmodupdater.RemotePackage),
+		}
+	}
+	forceFlag := flag.Lookup("force")
+	force := false
+	if forceFlag != nil {
+		force = forceFlag.Value.String() != "false"
+	}
+	if !force {
+		solutions, err := tc.Solve(tx)
+		if err != nil {
+			return err
+		}
+		if len(solutions) > 1 {
+			return fmt.Errorf("Dependency issue; can solve this in multiple ways. (This shouldn't happen in the current system.) %v", solutions)
+		}
+		if len(solutions) == 0 {
+			return fmt.Errorf("Internal error caused no solutions to be returned yet no error was returned.")
+		}
+		tx = solutions[0]
+	}
+	return tc.Perform(ctx.game, tx, func (pkg string, pre bool, remove bool, install bool) {
+		if install && remove {
+			if pre {
+				fmt.Fprintf(os.Stderr, "updating %s\n", pkg)
+			} else {
+				stats.Updated++
+			}
+		} else if install {
+			if pre {
+				fmt.Fprintf(os.Stderr, "installing %s\n", pkg)
+			} else {
+				stats.Installed++
+			}
+		} else if remove {
+			if pre {
+				fmt.Fprintf(os.Stderr, "removing %s\n", pkg)
+			} else {
+				stats.Removed++
+			}
+		}
+	})
 }
 
 //OnlineContext contains the details for an online context.

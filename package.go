@@ -187,6 +187,13 @@ func (pm PackageMetadata) Description() string {
 	return description.(string)
 }
 
+// FullReferent combines the ID and human name.
+func (pm PackageMetadata) FullReferent() string {
+	if pm.HumanName() != pm.Name() {
+		return "'" + pm.HumanName() + "' (" + pm.Name() + ")"
+	}
+	return "'" + pm.Name() + "'"
+}
 
 // Package represents a package, local or remote.
 type Package interface {

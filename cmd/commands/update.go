@@ -5,32 +5,36 @@ import (
 
 	"github.com/CCDirectLink/CCUpdaterCLI/cmd/internal"
 	"github.com/CCDirectLink/CCUpdaterCLI/local"
+	"github.com/CCDirectLink/CCUpdaterCLI"
 )
 
 //Update a mod
 func Update(context *internal.OnlineContext, args []string) (*internal.Stats, error) {
 	if len(args) == 0 {
-		return updateOutdated(context)
+		args = updateOutdated(context)
 	}
 
-	remotePackages := context.RemotePackages()
+	localPackages := context.Game().Packages()
 	stats := &internal.Stats{}
+
+	tx := make(ccmodupdater.PackageTX)
 	for _, name := range args {
-		remoteMod, remoteModExists := remotePackages[name]
-		if !remoteModExists {
-			stats.AddWarning(fmt.Sprintf("cmd: Couldn't update mod '%s' because no remote version exists.", name))
+		if localPackages[name] == nil {
+			stats.AddWarning(fmt.Sprintf("cmd: Couldn't update mod '%s' because it isn't installed.", name))
 		} else {
-			if err := installOrUpdateMod(context, remoteMod, stats); err != nil {
-				return stats, err
-			}
+			tx[name] = ccmodupdater.PackageTXOperationInstall
 		}
 	}
-
-	return stats, nil
+	
+	err := context.Execute(tx, stats)
+	for _, warning := range local.CheckLocal(context.Game(), context.RemotePackages()) {
+		stats.AddWarning(warning)
+	}
+	return stats, err
 }
 
-func updateOutdated(context *internal.OnlineContext) (*internal.Stats, error) {
-	stats := &internal.Stats{}
+func updateOutdated(context *internal.OnlineContext) []string {
+	args := []string{}
 	remotePackages := context.RemotePackages()
 	for modName, mod := range context.Game().Packages() {
 		remotePkg, hasRemote := remotePackages[modName]
@@ -43,15 +47,9 @@ func updateOutdated(context *internal.OnlineContext) (*internal.Stats, error) {
 			continue
 		}
 
-		if err := installOrUpdateMod(context, remotePkg, stats); err != nil {
-			return stats, err
-		}
+		args = append(args, modName)
 	}
 
-	for _, warning := range local.CheckLocal(context.Game(), context.RemotePackages()) {
-		stats.AddWarning(warning)
-	}
-
-	return stats, nil
+	return args
 }
 
