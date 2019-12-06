@@ -10,7 +10,7 @@ import (
 
 var getOnce sync.Once
 
-const link = "https://raw.githubusercontent.com/20kdc/CCModDB/master/npDatabase.json"
+const link = "https://raw.githubusercontent.com/CCDirectLink/CCModDB/master/npDatabase.json"
 
 // ccModDB contains data about mods
 type ccModDB map[string]ccModDBMod
