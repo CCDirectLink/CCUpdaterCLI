@@ -41,9 +41,13 @@ func getModPackage(base string) (ccmodupdater.LocalPackage, error) {
 	}
 
 	// Still have to mess with the metadata just a tad.
-	if metadata.Name() == "Simplify" {
+	// Specifically, we need to find mods which are connected into CCLoader, because these mods are all special
+	if (metadata.Name() == "Simplify") || (metadata.Name() == "CCLoader display version") || (metadata.Name() == "OpenDevTools") {
 		metadata["ccmodType"] = "base"
 		metadata["description"] = "Assistant to CCLoader."
+		// While this is false, it is also quite necessary because otherwise Simplify's CCLoader dep. messes with things (not good)
+		delete(metadata, "dependencies")
+		delete(metadata, "ccmodDependencies")
 	}
 	
 	return modPackage{

@@ -29,6 +29,10 @@ func (cc ccLoaderPackage) Remove() error {
 	if err := os.RemoveAll(filepath.Join(cc.dir, "assets/mods/simplify")); err != nil {
 		return fmt.Errorf("Couldn't remove Simplify: %s", err.Error())
 	}
+	// These in particular we should remove for upgrade reasons, but if they're already gone it doesn't matter
+	os.RemoveAll(filepath.Join(cc.dir, "assets/mods/ccloader-version-display"))
+	os.RemoveAll(filepath.Join(cc.dir, "assets/mods/openDevTools"))
+
 	return nil
 }
 
